@@ -1,0 +1,96 @@
+bochs 提示 Unknown win32 option 'gui_debug'
+
+https://sourceforge.net/p/bochs/discussion/39592/thread/76f5739c/?limit=25#5fdc
+
+使用bochsdbg -q -f bochsrc.bxrc 来启动
+
+gdb调试
+
+http://bochs.sourceforge.net/doc/docbook/user/debugging-with-gdb.html
+http://bochs.sourceforge.net/cgi-bin/topper.pl?name=New+Bochs+Documentation&url=http://bochs.sourceforge.net/doc/docbook/user/index.html
+http://bochs.sourceforge.net/doc/docbook/user/bochsrc.html
+在Linux下编译
+使用mysys执行configuration
+./configure --enable-gdb-stub
+
+https://sourceforge.net/p/bochs/discussion/39592/thread/fd3c3be9/
+https://sourceforge.net/p/bochs/discussion/39592/thread/59621f0690/
+在windows下编译
+在/sourceforge中找到bochs，从其file里找到bochs-2.6.9-msvc-src.zip下载
+利用VS打开工程解压后在vs2013文件加中的工程文件
+找到bochs工程，找到其中的config.h头文件
+找到#define BX_GDBSTUB 0
+改为#define BX_GDBSTUB 1
+找到#define BX_SUPPORT_HANDLERS_CHAINING_SPEEDUPS 1
+改为#define BX_SUPPORT_HANDLERS_CHAINING_SPEEDUPS 0
+往bochs项目中添加项gdbstun.cc（在解压的根目录下）
+以支持gdb调试
+利用VS生成bochs，从obj-release中将编译好的bochs.exe拿出来即可使用
+
+（其它选项看起来也有些用，如
+#define BX_DEBUGGER 1
+#define BX_DEBUGGER_GUI 1
+以开启DEBUG的GUI，不过似乎不能和gdb一起用，所以编译了个新的专门用来debug汇编级别的
+
+cmake中的cp要换成windows下的copy指令，路径必须用//而不是\分界
+但是Cline中的路径默认是/
+因此使用string(REPLACE "/" "\\\\" CMD_COMMAND_PATH ${PROJECT_SOURCE_DIR} )得到一个反斜杠路径变量
+
+https://blog.csdn.net/acsunqi/article/details/78418756
+
+nasm的clion支持（可以在file->setting->plugins中搜索nasm得到）
+https://plugins.jetbrains.com/plugin/9759-nasm-assembly-language
+
+https://stackoverflow.com/questions/49131996/compile-asm-and-c-with-asm-for-debugging
+
+
+
+
+extren用法
+https://www.nasm.us/doc/nasmdoc6.html
+nasm格式
+http://yuxu9710108.blog.163.com/blog/static/237515342007125127731/
+混合编译
+http://www.cnblogs.com/jackyzzy/archive/2013/03/25/2981543.html
+http://www.cppblog.com/xingkongyun/archive/2009/04/07/79219.html
+解决
+https://www.linuxidc.com/Linux/2013-09/90061.htm
+gcc参数
+http://cppblog.com/SEMAN/archive/2005/11/30/1440.html
+
+
+编译关于32位和64位的问题
+https://blog.csdn.net/tom__mao__/article/details/49962909
+https://blog.csdn.net/x356982611/article/details/79056089
+
+关于报错 undefined reference to _GLOBAL_OFFSET_TABLE_ 
+https://stackoverflow.com/questions/45422374/undefined-reference-to-global-offset-table-only-when-generating-binaries
+
+栈顶错误导致问题
+
+C和ASM相互调用
+https://blog.csdn.net/laomd/article/details/80148121
+
+偏移地址错误导致显示乱码（由于用了nasm和gcc，入栈的位数和老师给的不一样，导致直接使用老师的偏移是错误的）
+
+
+可能需要在ret前加入leave以防止跳转出错
+同样是ret，c生成的让栈-4，自己的让栈+4？
+
+对于nasm编译出来的代码，ret的十六进制是C3，只会栈出2个字节，但是call的时候会栈入4个字节
+而C语言中的ret是66C3，会栈出4个字节，在差异下导致栈错误
+
+https://blog.csdn.net/zdy0_2004/article/details/43880695
+在AT&T中可以将汇编语言用retl和retw来改变，但是在NASM中怎么办？
+在ret前加前缀 o32即可解决
+https://stackoverflow.com/questions/37950640/what-operand-size-should-ret-default-to/37963640#37963640
+call调用C函数是，需要先push一次0数据以实现16位call和32位ret的对齐
+
+键盘按键中回车是\r不是\n
+
+奇怪的在jnz中单步跳过一条指令，加入nop进行尝试
+
+
+C调用每个参数传入4字节
+在汇编中取出的时候要注意间隔
+不过存入word再取出byte的时候这个不需要计算偏移量
