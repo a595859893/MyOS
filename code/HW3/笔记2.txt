@@ -94,3 +94,7 @@ call调用C函数是，需要先push一次0数据以实现16位call和32位ret的对齐
 C调用每个参数传入4字节
 在汇编中取出的时候要注意间隔
 不过存入word再取出byte的时候这个不需要计算偏移量
+
+
+磁盘
+https://blog.csdn.net/zxl3901/article/details/50072539

@@ -1,0 +1,11 @@
+遇上了奇怪的死循环
+首先是jmp指令向后移动了一条指令
+然后是call的reti向前移动了一条指令，也就是回来后立刻又执行了它自己
+
+使用call far而不是汇编原理里的call word
+中断回来的东西好像还需要自己进一步处理
+
+9号中断是用来捕捉按键按下的，按键本身还需要通过16号中断来得到ascii
+https://wenku.baidu.com/view/852479a3284ac850ad0242e0.html
+非阻塞16中断
+http://www.cnblogs.com/S-E-P/archive/2010/04/06/2045067.html
