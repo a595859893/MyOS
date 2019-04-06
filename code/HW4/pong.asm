@@ -60,8 +60,6 @@ looper:
 	dec DWORD[counter]
 	jnz .outi
 	mov DWORD[counter], MOVE_DELAY
-	dec WORD[back]
-	
 
 	;切换颜色和重置形状
 	mov BYTE[ball], BALL_NORMAL
@@ -135,12 +133,35 @@ looper:
 KeyPress:
 	push ax
 	push bx
+	push cx
+	push dx
+	push es
 	
 	in al, 60h
-	
 	pushf
 	call far [KeyInt]
 	mov byte[KeyInput], al
+	
+	cmp al,0x39
+	jne .KeyRet
+	dec WORD[back]
+	
+	mov ax, cs
+	mov es, ax
+	mov ah, 0x13      ;功能号
+	mov al, 1         ;光标至串尾
+	mov bh, 0         ;第0页
+	mov bl, 7         ;颜色白
+	mov dl, 0x5       ;第5列
+	mov dh, 0x8       ;第8行
+	mov bp, ouchstr     ;内容
+	mov cx, [ouchlen]   ;串长
+	int 0x10
+	
+	.KeyRet:
+	pop es
+	pop dx
+	pop cx
 	pop bx
 	pop ax
 	iret
@@ -174,7 +195,9 @@ backKernal:
 		inc WORD[posY]
 		cmp WORD[posY],BOUND_Y_MAX
 		jne .clear
-		
+	
+	xor ax, ax
+	mov es, ax
 	;恢复中断
 	cli
 	pop word[es:8*4+2]
@@ -208,7 +231,7 @@ SCREEN_X    equ 80   	    ;屏幕宽度
 SCREEN_Y    equ 25     		;屏幕高度
 BALL_NORMAL equ 'o'    		;平常样式
 BALL_PONG   equ '*'     	;撞墙样式
-MAXCOUNT    equ 100    		;跳回时间
+MAXCOUNT    equ 10    		;跳回次数
 
 ;variable
 counter dd MOVE_DELAY
@@ -220,10 +243,9 @@ faceY   dw 1
 ball    db BALL_NORMAL
 mystr   db "Created by Weng tianjun 16307064"
 mylen   dw 32
+ouchstr db "Ouch! Ouch!"
+ouchlen dw 11
 color   dw 00000000b
 
 KeyInput db 0xFF
 KeyInt	 dw 0x0000,0x0000
-
-times 510-($-$$) db 0   ;方便测试时文件覆盖
-dw 0xFFFF

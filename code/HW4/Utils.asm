@@ -14,44 +14,51 @@ BIAS_CALL equ 4
 BIAS_PUSH equ 2
 BIAS_ARG  equ 4
 
+SCREEN_WIDTH  equ 80
+SCREEN_HEIGHT equ 25
+
 
 Printf:
 ;void Printf(char* msg);
 	push bp
 	push es
 	push ax
-		mov ax, 0b800h
-		mov es, ax
-		mov	bp, sp
+	push bx
+	push di
+	push si
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov	bp, sp
 
-		mov	si, word[bp+(BIAS_CALL+BIAS_PUSH*3)]
-		mov	di, word[screenCusor]
-		mov	ah, 0Fh
-		.1:
-		mov al,byte[si]
-		inc si
-		test al, al
-		jz	.2
-		cmp	al, 0Ah ;回车
-		jnz	.3
-		push ax
-			mov	ax, di
-			mov	bl, 160
-			div	bl
-			and	ax, 0FFh
-			inc	ax
-			mov	bl, 160
-			mul	bl
-			mov	di, ax
-		pop	ax
-		jmp	.1
-		.3:
-		mov	[es:di], ax
-		add	di, 2
-		jmp	.1
+	mov	si, word[bp+(BIAS_CALL+BIAS_PUSH*6)]
+	mov	di, word[screenCusor]
+	mov	ah, 0Fh
+	.1:
+	mov al,byte[si]
+	inc si
+	test al, al
+	jz	.2
+	cmp	al, 0Ah ;回车
+	jnz	.3
+	push ax
+		mov	ax, di
+		mov	bl, 160
+		div	bl
+		and	ax, 0FFh
+		inc	ax
+		mov	bl, 160
+		mul	bl
+		mov	di, ax
+	pop	ax
+	jmp	.1
+	.3:
+	mov	[es:di], ax
+	add	di, 2
+	jmp	.1
 
-		.2:
-		mov	[screenCusor], di
+	.2:
+	mov	[screenCusor], di
 		
 	;当前游标显示
 	mov	ax, di
@@ -70,6 +77,72 @@ Printf:
 	int 10h
 	
 	;退出
+	pop si
+	pop di
+	pop bx
+	pop ax
+	pop es
+	pop	bp
+	o32 ret
+	
+ScreenPrintf:
+;void ScreenPrintf(char* msg,int col,int row);
+	push bp
+	push es
+	push ax
+	push bx
+	push cx
+	push di
+	push si
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov	bp, sp
+
+	mov	si, word[bp+(BIAS_CALL+BIAS_PUSH*7+BIAS_ARG*0)]
+	mov bx, word[bp+(BIAS_CALL+BIAS_PUSH*7+BIAS_ARG*1)]
+	mov ax, word[bp+(BIAS_CALL+BIAS_PUSH*7+BIAS_ARG*2)]
+	
+	mov cl, SCREEN_WIDTH
+	mul cl
+	add ax, bx
+	mov cx, 2
+	mul cx
+	
+	mov	di, ax
+	mov	ah, 0Fh
+	.1:
+	mov al,byte[si]
+	inc si
+	test al, al
+	jz	.2
+	cmp	al, 0Ah ;回车
+	jnz	.3
+	push ax
+	
+		mov	ax, di
+		mov	cl, 160
+		div	cl
+		and	ax, 0FFh
+		inc	ax
+		mul	cl
+		add ax, bx
+		add ax, bx
+		mov	di, ax
+		
+	pop	ax
+	jmp	.1
+	.3:
+	mov	[es:di], ax
+	add	di, 2
+	jmp	.1
+
+	.2:
+	;退出
+	pop si
+	pop di
+	pop cx
+	pop bx
 	pop ax
 	pop es
 	pop	bp

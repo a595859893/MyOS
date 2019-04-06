@@ -4,6 +4,10 @@ __asm__(".code16gcc\n");
 extern int GetFileInfo(int fileIndex,char* name,int *sector,int *size,int *time,int *type);
 extern void RevalInt();
 extern void SetInt();
+extern void CallInt33();
+extern void CallInt34();
+extern void CallInt35();
+extern void CallInt36();
 
 int CheckCommand(char *cmd,int end);
 void AutoCompelete(char *cmd);
@@ -13,35 +17,36 @@ void LoadBatch();
 void FileList();
 void Pong();
 
-int fileInfoList = 0x7e00;
-int pagePos = 0xD000;
-int batchBuffer = 0xF000;
+int batchBuffer = 0x7F00;
+int fileInfoList = 0x7C00;
+int pagePos = 0xF000;
 
-#define CMD_BUFFER_LEN 60
+#define CMD_BUFFER_LEN 50
 #define CMD_COMMAND_NUM 3
 #define CMD_COMMAND_MAXLENGTH 10
-#define CMD_BATCH_MAXLENGTH 10
-#define CMD_BATCH_NAMELENGTH 8
+#define CMD_BATCH_NAMELENGTH 10
 int screenCusor = 0;
 int cmdCurrent = 0;
 char cmdBuffer[CMD_BUFFER_LEN + 1] = "";
+int batchSize[CMD_COMMAND_MAXLENGTH] = {};
+int batchPos[CMD_COMMAND_MAXLENGTH] = {};
 char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"clear",
 	"filelist",
-	"pong"
+	"pong",
+	"int33",
+	"int34",
+	"int35",
+	"int36"
 };
-int orderLen = 3;
-int batchSize[CMD_BATCH_MAXLENGTH] = {};
-int batchPos[CMD_BATCH_MAXLENGTH] = {};
+int orderLen = 7;
 
 void CommandOn(){
 	//载入文件信息
 	Open(1,1,1,fileInfoList);
 	//载入可执行batch信息
 	LoadBatch();
-	
-	Pong();
-	
+
 	cmdCurrent = 0;
 	Clear();
 	Printf("Welcome to WengOS!\n");
@@ -84,7 +89,7 @@ int CommandMatch(char *cmd,int *start,int end){
 	
 	for(int i =0;i<CMD_COMMAND_MAXLENGTH;i++){
 		if(cmd[current + *start] == orderList[i][current]){
-			orderIndex[length] = i;		
+			orderIndex[length] = i;
 			length++;
 		}
 	}
@@ -102,14 +107,14 @@ int CommandMatch(char *cmd,int *start,int end){
 		}else{
 			for(int i =0;i<length;i++){
 				if(cmd[current + *start] != orderList[orderIndex[i]][current]){
-					orderIndex[i] = orderIndex[length];
 					length--;
+					orderIndex[i] = orderIndex[length];
 					i--;
 				}
 			}
 		}
 	}
-
+	
 	return -1;
 }
 
@@ -144,8 +149,8 @@ void AutoCompelete(char *cmd){
 		}else{
 			for(int i =0;i<length;i++){
 				if(cmd[current + start] != orderList[orderIndex[i]][current]){
-					orderIndex[i] = orderIndex[length];
 					length--;
+					orderIndex[i] = orderIndex[length];
 					i--;
 				}
 			}
@@ -171,6 +176,18 @@ int CheckCommand(char *cmd,int end){
 				break;
 			case 2://pong
 				Pong();
+				break;
+			case 3://int33
+				CallInt33();
+				break;
+			case 4://int34
+				CallInt34();
+				break;
+			case 5://int35
+				CallInt35();
+				break;
+			case 6://int36
+				CallInt36();
 				break;
 			default:
 				Open(batchPos[cmdId]%18+1,batchPos[cmdId]/18,batchSize[cmdId],batchBuffer);
@@ -268,7 +285,7 @@ void FileInfo(char *fileName,int position,int size,int time,int type){
 void Pong(){
 	Clear();
 	RevalInt();
-	OpenAndJump(2,1,1,pagePos);
+	OpenAndJump(2,1,2,pagePos);
 	SetInt();
 	Clear();
 }
