@@ -3,11 +3,11 @@ plugin_ctrl: unmapped=1, biosdev=1, speaker=1, extfpuirq=1, parallel=1, serial=1
 config_interface: win32config
 display_library: win32, options="gui_debug"
 memory: host=1, guest=1
-romimage: file="E:\bochs\Bochs-2.6.9/BIOS-bochs-latest", address=0x0, options=none
-vgaromimage: file="E:\bochs\Bochs-2.6.9/VGABIOS-lgpl-latest"
+romimage: file="D:\Tools\Bochs-2.6.9/BIOS-bochs-latest", address=0x0, options=none
+vgaromimage: file="D:\Tools\Bochs-2.6.9/VGABIOS-lgpl-latest"
 boot: floppy
 floppy_bootsig_check: disabled=0
-floppya: type=1_44, 1_44="D:\OSProject\fnn.flp", status=inserted, write_protected=0
+floppya: type=1_44, 1_44="D:\Project\OS\MyOS\fnn.flp", status=inserted, write_protected=0
 # no floppyb
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=none
@@ -38,7 +38,7 @@ private_colormap: enabled=0
 clock: sync=none, time0=local, rtc_sync=0
 # no cmosimage
 # no loader
-log: D:\OSProject\bochs\log.txt
+log: D:\Project\OS\MyOS\log.txt
 logprefix: %t%e%d
 debug: action=ignore
 info: action=report

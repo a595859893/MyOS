@@ -1,0 +1,3 @@
+操作系统容量变大，扩容（磁盘读取）
+https://blog.csdn.net/zxl3901/article/details/50072539
+int8的设计（忘记了用in传递消息给主板）
