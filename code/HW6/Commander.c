@@ -17,17 +17,18 @@ int MultiTest(char *cmd,int *start,int end);
 
 int batchBuffer = 0x7F00;
 int fileInfoList = 0x7C00;
-int pagePos[4] = {0xC000,0xC100,0xC200,0xC300}
+int pagePos[4] = {0xC000,0xC200,0xC400,0xC600};
 
 #define CMD_BUFFER_LEN 50
 #define CMD_COMMAND_NUM 3
 #define CMD_COMMAND_MAXLENGTH 10
-#define CMD_BATCH_NAMELENGTH 10
+#define CMD_BATCH_NAMELENGTH 15
 int screenCusor = 0;
 int cmdCurrent = 0;
 char cmdBuffer[CMD_BUFFER_LEN + 1] = "";
 int batchSize[CMD_COMMAND_MAXLENGTH] = {};
 int batchPos[CMD_COMMAND_MAXLENGTH] = {};
+int orderLen = 9;
 char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"clear",
 	"filelist",
@@ -35,10 +36,9 @@ char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"int1",
 	"int2",
 	"int3",
-	"int4"，
+	"int4",
 	"test"
 };
-int orderLen = 7;
 
 void CommandOn(){
 	InitPcb();
@@ -191,11 +191,11 @@ int CheckCommand(char *cmd,int end){
 				CallSysInt(5);
 				break;
 			case 7:
-				if(multiTest(cmd,&start,end) == -1){
+				if(MultiTest(cmd,&start,end) == -1){
 					Printf( "Wrong order!\n");
 					return -1;
 				}
-				break
+				break;
 			default:
 				Open(batchPos[cmdId]+1,batchSize[cmdId],batchBuffer);
 				ReadBatch(batchBuffer);
@@ -289,19 +289,26 @@ void FileInfo(char *fileName,int position,int size,int time,int type){
 	Printf("\n-------------------------------------------\n");
 }
 
-int MultiTest(char *cmd,int *start,int end);){
+int MultiTest(char *cmd,int *start,int end){
 	int current = 0;
-	int startIndex[4] = {};
+	int startIndex[4];
+	int hasThread = 0;
+	
+	for(int i=0;i<4;i++){
+		startIndex[i]=0;
+	}
+	
 	while(1){
-		if(cmd[current + *start]>='1' && cmd[current + *start]<='4'){
-			startIndex[cmd[current + *start]-'0'] = 1;
-		}else if((cmd[current + *start]==' ') || ((current + *start)>=end)){
+		char letter = cmd[current + *start];
+		if(letter>='1' && letter<='4'){
+			startIndex[letter - '0'] = 1;
+			hasThread = 1;
+		}else if(hasThread&&(letter==' ' || ((current + *start)>=end))){
 			*start += current + 1;
-			for(int i =0;i<4;i++){
-				if(startIndex[i] == 1){
-					//参数待填
-					Open(32+i*2,2,pagePos[i]);
-					NewThread(pagePos[i],100);
+			for(int i=0;i<4;i++){
+				if(startIndex[i]){
+					Open(32+i*2,2,pagePos[i]+100);
+					NewThread(pagePos[i]>>4,100);
 				}
 			}
 			NextThread();
@@ -309,6 +316,7 @@ int MultiTest(char *cmd,int *start,int end);){
 		}else{
 			return 0;
 		}
+		current++;
 	}
 }
 

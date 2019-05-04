@@ -1,20 +1,4 @@
 extern screenCusor
-extern tmp_ax
-extern tmp_bx
-extern tmp_cx
-extern tmp_dx
-extern tmp_si
-extern tmp_di
-extern tmp_bp
-extern tmp_sp
-extern tmp_ip
-extern tmp_flags
-extern tmp_cs
-extern tmp_ds
-extern tmp_es
-extern tmp_ss
-extern tmp_fs
-extern tmp_gs
 
 global GetChar
 global PutChar
@@ -25,8 +9,6 @@ global Open
 global OpenAndJump
 global Readline
 global DisposeThread
-global SaveThreadState
-global RevalThreadState
 
 BIAS_CALL equ 4
 BIAS_PUSH equ 2
@@ -36,10 +18,6 @@ SCREEN_WIDTH  equ 80
 SCREEN_HEIGHT equ 25
 
 [SECTION .text]
-SaveThreadState:
-
-RevalThreadState:
-
 Printf:
 ;void Printf(char* msg);
 	push bp

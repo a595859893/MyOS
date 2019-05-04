@@ -2,24 +2,12 @@ org 0x100
 
 ballstart:
 	sti	;不知道为什么中断被关了……
-	;保存上下文
-	push ax
-	push bx
-	push cx
-	push ds
-	push es
-	mov bx, ss
-	mov cx, sp
-
 	;设置数据段
 	mov ax, cs
 	mov ds, ax
 	mov ss, ax
 	mov ss, ax
 	mov sp, 0xFFF0
-	;原栈指针入栈
-	push bx
-	push cx
 
 	;原中断入栈
 	xor ax,ax
@@ -176,16 +164,6 @@ backKernal:
 	mov ax, word[KeyInt+2]
 	mov word[es:9*4+2], ax
 	sti
-	;恢复栈指针
-	pop ax
-	pop bx
-	mov sp, ax
-	mov ss, bx
-	pop es
-	pop ds
-	pop cx
-	pop bx
-	pop ax
 	retf
 
 

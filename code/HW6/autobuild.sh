@@ -8,7 +8,7 @@ nasm fileList.asm -f bin -o ./bin/fileList.bin
 nasm kernal.asm -f elf32 -o ./bin/kernal.o
 nasm pong.asm -f bin -o ./bin/pong.bin
 gcc -fno-PIC -march=i386 -m16 -c -mpreferred-stack-boundary=2 -ffreestanding Comprehensive.c -o ./bin/comp.o
-ld -m i386pe -N -s ./bin/kernal.o ./bin/comp.o -Ttext 0x100 -Tdata 0x1A00 -o ./bin/kernal.tmp
+ld -m i386pe -N -s ./bin/kernal.o ./bin/comp.o -Ttext 0x100 -Tdata 0x2500 -o ./bin/kernal.tmp
 objcopy -O binary ./bin/kernal.tmp ./bin/kernal.bin
 dd if=/dev/zero of=./fnn.flp bs=1474560 count=1
 dd if=./bin/boost.bin of=./fnn.flp bs=512 count=1 conv=notrunc

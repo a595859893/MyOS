@@ -1,3 +1,11 @@
 操作系统容量变大，扩容（磁盘读取）
 https://blog.csdn.net/zxl3901/article/details/50072539
 int8的设计（忘记了用in传递消息给主板）
+
+FATAL: KBD :int16h : out of keyboard input
+
+位置错误导致虚拟机内变量乱码（？？？）
+
+进入中断时ds不是想要的值
+要设置ds就会破坏ax和ds两个值
+为了保证两个值，先利用栈将其储存
