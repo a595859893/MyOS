@@ -54,6 +54,9 @@ int InitPcb(){
 int NewThread(int cs,int ip){
 	pcb[freeHead].cs = cs;
 	pcb[freeHead].ip = ip;
+	//不太好的用户栈
+	pcb[freeHead].ss = cs;
+	pcb[freeHead].sp = 0xfff0;
 	pcb[freeHead].state = TS_NEW;
 	
 	int next = pcb[freeHead].next;
@@ -77,12 +80,20 @@ int NewThread(int cs,int ip){
 	}
 	readyHead = temp;
 	
+
 	return readyHead;
 }
 
 int DisposeThread(int index){
 	int next = pcb[readyHead].next;
 	int prev = pcb[readyHead].prev;
+	
+	//进程数是否为空
+	if(next == prev){
+		readyHead = -1;
+		return -1;
+	}
+	
 	pcb[next].prev = pcb[readyHead].prev;
 	pcb[prev].next = pcb[readyHead].next;
 	readyHead = next;
@@ -97,10 +108,11 @@ int DisposeThread(int index){
 }
 
 void NextThread(){
+	//保存之前的寄存器状态
 	if(currentPCB == -1){
 		currentPCB = readyHead;
 	}else{
-		pcb[currentPCB].state = TS_BLOCKED;
+		//切换PCB
 		pcb[currentPCB].ax = tmp_ax;
 		pcb[currentPCB].bx = tmp_bx;
 		pcb[currentPCB].cx = tmp_cx;
@@ -117,13 +129,13 @@ void NextThread(){
 		pcb[currentPCB].fs = tmp_fs;
 		pcb[currentPCB].gs = tmp_gs;
 		pcb[currentPCB].flags = tmp_flags;
-		
+		pcb[currentPCB].state = TS_BLOCKED;
 		currentPCB = pcb[currentPCB].next;
 	}
+		
+	pcb[currentPCB].state = TS_RUNNING;
 	
-	if(pcb[currentPCB].state == TS_BLOCKED)
-		pcb[currentPCB].state = TS_RUNNING;
-	
+	//将PCB内状态赋予临时变量共汇编恢复
 	tmp_ax = pcb[currentPCB].ax;
 	tmp_bx = pcb[currentPCB].bx;
 	tmp_cx = pcb[currentPCB].cx;

@@ -291,30 +291,40 @@ void FileInfo(char *fileName,int position,int size,int time,int type){
 
 int MultiTest(char *cmd,int *start,int end){
 	int current = 0;
-	int startIndex[4];
+	int startIndex[4] = {0,0,0,0};
 	int hasThread = 0;
 	
 	for(int i=0;i<4;i++){
-		startIndex[i]=0;
+		char temp[10] = "";
+		Int2Str(startIndex[i],temp,10); 
+		Printf(temp);
+		Printf("\n");
+		startIndex[i] = 0;
 	}
+	hasThread = 0;
+	current = 0;
 	
 	while(1){
 		char letter = cmd[current + *start];
 		if(letter>='1' && letter<='4'){
-			startIndex[letter - '0'] = 1;
+			startIndex[letter - '1'] = 1;
 			hasThread = 1;
-		}else if(hasThread&&(letter==' ' || ((current + *start)>=end))){
+		}else if(hasThread && (letter==' ' || ((current + *start)>=end))){
 			*start += current + 1;
+
 			for(int i=0;i<4;i++){
 				if(startIndex[i]){
-					Open(32+i*2,2,pagePos[i]+100);
-					NewThread(pagePos[i]>>4,100);
+					char temp[10] = "";
+					Int2Str(pagePos[i],temp,10); 
+					Printf(temp);
+					
+					Open(32+i*2,2,pagePos[i]+0x100);
+					NewThread(pagePos[i]>>4,0x100);
 				}
 			}
-			NextThread();
 			return 1;
 		}else{
-			return 0;
+			return -1;
 		}
 		current++;
 	}

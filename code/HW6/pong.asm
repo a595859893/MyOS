@@ -1,29 +1,18 @@
 org 0x100
-
+[section .text]
 ballstart:
 	sti	;不知道为什么中断被关了……
 	;设置数据段
 	mov ax, cs
 	mov ds, ax
 	mov ss, ax
-	mov ss, ax
 	mov sp, 0xFFF0
-
-	;原中断入栈
+	
+	;中断覆盖
 	xor ax,ax
 	mov es,ax
-	push word[es:8*4]
-	push word[es:8*4+2]
-	; 键盘中断
-	push word[es:9*4]
-	pop word[KeyInt]
-	push word[es:9*4+2]
-	pop word[KeyInt+2]
-	;中断覆盖
-	mov word[es:8*4], looper
-	mov word[es:8*4+2], cs
-	mov word[es:9*4], KeyPress
-	mov word[es:9*4+2], cs
+	mov word[es:22h*4], looper
+	mov word[es:22h*4+2], cs
 	mov ax, cs
 	mov es, ax
 
@@ -166,7 +155,7 @@ backKernal:
 	sti
 	retf
 
-
+[section .data]
 ;constant
 DISPLAYSEG  equ 0xB800  	;显存地址
 MOVE_DELAY  equ 30   		;字符移动耗时

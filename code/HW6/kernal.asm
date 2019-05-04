@@ -20,11 +20,7 @@ extern tmp_ss
 extern tmp_fs
 extern tmp_gs
 extern tmp_state
-extern currentPCB
-
-extern TS_NEW
-extern TS_RUNNING
-extern TS_BLOCKED
+extern readyHead
 
 global _start
 global GetFileInfo
@@ -80,17 +76,36 @@ TakeTurnInt:
 	pop word[tmp_ds]
 	pop word[tmp_ax]
 	
-	cmp word[currentPCB],-1
-	je .finish
 	dec word[intTimer]
 	jz .exchange
 	
-	;保存当前寄存器状态至临时变量
+	;自定义时钟中断
+	xor ax,ax
+	mov ds,ax
+	cmp word[22h*4+2],0xf000
+	mov ax,cs
+	mov ds,ax
+	je .finish			;中断不是自定义的，跳过
+	
+	;执行自定义中断
+	xor ax,ax
+	mov ds,ax
+	push word[22h*4+2]
+	push word[22h*4]
+	mov ax,word[tmp_ax]
+	mov ds,word[tmp_ds]
+	retf
+	
+	;进程切换（10次中断切换1次）
 	.exchange:
 	mov word[intTimer],INT_DELAY
-	pop dword[tmp_cs]
-	pop dword[tmp_ip]
-	pop dword[tmp_flags]
+	cmp word[readyHead],-1
+	je .finish
+	
+	;保存当前寄存器状态至临时变量
+	pop word[tmp_ip]
+	pop word[tmp_cs]
+	pop word[tmp_flags]
 	
 	mov word[tmp_bx],bx
 	mov word[tmp_cx],cx
@@ -108,18 +123,12 @@ TakeTurnInt:
 	push 0
 	call NextThread
 	
-	;判断是否为新进程是的话不切换寄存器状态直接跳跃
-	;ax在开始已经记录，结束的时候会恢复
-	;所以中途就不用管覆盖了
-	mov ax,word[tmp_state]
-	cmp ax,word[TS_NEW]
-	je .newThread
 	;寄存器状态恢复
 	mov si,word[tmp_si]
 	mov di,word[tmp_di]
 	mov bp,word[tmp_bp]
 	mov sp,word[tmp_sp]
-	mov ds,word[tmp_ds]
+	
 	mov es,word[tmp_es]
 	mov ss,word[tmp_ss]
 	mov fs,word[tmp_fs]
@@ -130,12 +139,7 @@ TakeTurnInt:
 	mov es,word[tmp_es]
 	jmp .jumpPrepare
 	
-	;新进程变成运行中进程
-	.newThread:
-	mov ax,word[TS_RUNNING]
-	mov word[tmp_state],ax
-	;准备跳至新进程
-	.jumpPrepare:
+	.jumpPrepare:		;准备跳至新进程
 	push word[tmp_flags]
 	push word[tmp_cs]
 	push word[tmp_ip]
@@ -174,8 +178,8 @@ SetInt:
 	mov word[es:0x21*4+2], cs
 
 	;自定义时钟中断
-	mov word[es:0x22*4], WindFireWheelWithoutEnemy
-	mov word[es:0x22*4+2], cs
+	; mov word[es:0x22*4], WindFireWheelWithoutEnemy
+	; mov word[es:0x22*4+2], cs
 	
 	pop es
 	pop ax

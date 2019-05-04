@@ -89,8 +89,6 @@ BigFireWind:
 	jmp WindFireWheelWithoutEnemy.BulletCheck
 	
 WindFireWheelWithoutEnemy:
-	nop
-	nop
 	push eax
 	push bx
 	push cx
