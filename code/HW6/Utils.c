@@ -18,6 +18,7 @@ int DisposeThread(int index);
 
 #define PCB_LENGTH 5
 #define PCB_STORAGE 5
+#define PCB_INT_LENGTH 2
 
 const int TS_NEW = 0;
 const int TS_BLOCKED = 1;
@@ -27,6 +28,8 @@ typedef struct{
 	long cs,ip,flags;
 	int next,prev,state;
 	int ax,bx,cx,dx,si,di,bp,sp,ds,es,ss,fs,gs;
+	int timercs;
+	int timerip;
 }PCB;
 
 PCB pcb[PCB_LENGTH];
@@ -39,6 +42,7 @@ int tmp_state;
 int tmp_ax,tmp_bx,tmp_cx,tmp_dx;
 int tmp_si,tmp_di,tmp_bp,tmp_sp,tmp_ip,tmp_flags;
 int tmp_cs,tmp_ds,tmp_es,tmp_ss,tmp_fs,tmp_gs;
+int tmp_timercs,tmp_timerip;
 
 
 int InitPcb(){
@@ -130,6 +134,8 @@ void NextThread(){
 		pcb[currentPCB].gs = tmp_gs;
 		pcb[currentPCB].flags = tmp_flags;
 		pcb[currentPCB].state = TS_BLOCKED;
+		pcb[currentPCB].timercs = tmp_timercs;
+		pcb[currentPCB].timerip = tmp_timerip;
 		currentPCB = pcb[currentPCB].next;
 	}
 		
@@ -153,6 +159,8 @@ void NextThread(){
 	tmp_cs = pcb[currentPCB].cs;
 	tmp_flags = pcb[currentPCB].flags;
 	tmp_state = pcb[currentPCB].state;
+	tmp_timercs = pcb[currentPCB].timercs;
+	tmp_timerip = pcb[currentPCB].timerip;
 }
 
 int strEqual(char *a,char *b){

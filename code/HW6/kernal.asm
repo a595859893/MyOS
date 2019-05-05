@@ -21,6 +21,8 @@ extern tmp_fs
 extern tmp_gs
 extern tmp_state
 extern readyHead
+extern tmp_timercs
+extern tmp_timerip
 
 global _start
 global GetFileInfo
@@ -71,29 +73,34 @@ TakeTurnInt:
 	;设置ds保证临时变量正确
 	push ax
 	push ds
+	push es
+	
+	xor ax,ax
+	mov es,ax
 	mov ax,cs
 	mov ds,ax
+	
+	mov ax,word[es:22h*4+2]
+	mov word[tmp_timercs],ax
+	mov ax,word[es:22h*4]
+	mov word[tmp_timerip],ax
+	
+	pop word[tmp_es]
 	pop word[tmp_ds]
 	pop word[tmp_ax]
-	
 	dec word[intTimer]
 	jz .exchange
 	
 	;自定义时钟中断
-	xor ax,ax
-	mov ds,ax
-	cmp word[22h*4+2],0xf000
-	mov ax,cs
-	mov ds,ax
+	cmp word[tmp_timercs],0xf000
 	je .finish			;中断不是自定义的，跳过
 	
 	;执行自定义中断
-	xor ax,ax
-	mov ds,ax
-	push word[22h*4+2]
-	push word[22h*4]
+	push word[tmp_timercs]
+	push word[tmp_timerip]
 	mov ax,word[tmp_ax]
 	mov ds,word[tmp_ds]
+	mov es,word[tmp_es]
 	retf
 	
 	;进程切换（10次中断切换1次）
@@ -110,7 +117,6 @@ TakeTurnInt:
 	mov word[tmp_bx],bx
 	mov word[tmp_cx],cx
 	mov word[tmp_dx],dx
-	mov word[tmp_es],es
 	mov word[tmp_si],si
 	mov word[tmp_di],di
 	mov word[tmp_fs],fs
@@ -129,7 +135,6 @@ TakeTurnInt:
 	mov bp,word[tmp_bp]
 	mov sp,word[tmp_sp]
 	
-	mov es,word[tmp_es]
 	mov ss,word[tmp_ss]
 	mov fs,word[tmp_fs]
 	mov gs,word[tmp_gs]
@@ -148,8 +153,19 @@ TakeTurnInt:
 	mov al,20h			; AL = EOI
 	out 20h,al			; 发送EOI到主8529A
 	out 0A0h,al			; 发送EOI到从8529A
-
+	
+	xor ax,ax
+	mov es,ax
+	mov ax,cs
+	mov ds,ax
+	
+	mov ax,word[tmp_timercs]
+	mov word[es:22h*4+2],ax
+	mov ax,word[tmp_timerip]
+	mov word[es:22h*4],ax
+	
 	mov ax,word[tmp_ax]
+	mov es,word[tmp_es]
 	mov ds,word[tmp_ds]
 	iret
 	

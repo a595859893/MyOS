@@ -12,8 +12,9 @@ void ReadBatch(int batchBuffer);
 void FileInfo(char *fileName,int position,int size,int time,int type);
 void LoadBatch();
 void FileList();
-void Pong();
 int MultiTest(char *cmd,int *start,int end);
+void Pong();
+
 
 int batchBuffer = 0x7F00;
 int fileInfoList = 0x7C00;
@@ -163,6 +164,7 @@ void AutoCompelete(char *cmd){
 
 int CheckCommand(char *cmd,int end){
 	int start = 0,cmdId=-1;
+
 	while(start<end){
 		cmdId = CommandMatch(cmd,&start,end);
 		switch(cmdId){
@@ -291,42 +293,38 @@ void FileInfo(char *fileName,int position,int size,int time,int type){
 
 int MultiTest(char *cmd,int *start,int end){
 	int current = 0;
-	int startIndex[4] = {0,0,0,0};
 	int hasThread = 0;
-	
-	for(int i=0;i<4;i++){
-		char temp[10] = "";
-		Int2Str(startIndex[i],temp,10); 
-		Printf(temp);
-		Printf("\n");
-		startIndex[i] = 0;
-	}
-	hasThread = 0;
-	current = 0;
+	int startIndex[4] = {0};
+
+	//不知道为何声明数组的初始化无校，故用语句循环再初始化一遍
+	for(int i=0;i<4;i++) startIndex[i] = 0;
 	
 	while(1){
+		if((current + *start)>=end) return -1;
+		
 		char letter = cmd[current + *start];
 		if(letter>='1' && letter<='4'){
 			startIndex[letter - '1'] = 1;
 			hasThread = 1;
-		}else if(hasThread && (letter==' ' || ((current + *start)>=end))){
-			*start += current + 1;
-
-			for(int i=0;i<4;i++){
-				if(startIndex[i]){
-					char temp[10] = "";
-					Int2Str(pagePos[i],temp,10); 
-					Printf(temp);
-					
-					Open(32+i*2,2,pagePos[i]+0x100);
-					NewThread(pagePos[i]>>4,0x100);
-				}
-			}
-			return 1;
-		}else{
+		}else if(letter != ' '){
 			return -1;
 		}
 		current++;
+		
+		if((*start + current)>=end || letter==' '){
+			if(hasThread){
+				*start += current + 1;
+				for(int i=0;i<4;i++){
+					if(startIndex[i]){
+						Open(32+i*2,2,pagePos[i]+0x100);
+						NewThread(pagePos[i]>>4,0x100);
+					}
+				}
+				return 1;
+			}
+			return -1;
+		}
+		
 	}
 }
 

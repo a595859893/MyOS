@@ -27,7 +27,12 @@ ballstart:
 	mov cx, [mylen]   ;串长
 	int 0x10
 	
-	jmp $
+	.check:
+	cmp byte[back],1
+	jne .check
+	
+	; 退出线程
+	jmp .check
 
 looper:
 	;速度计数器
@@ -35,7 +40,7 @@ looper:
 	jnz .outi
 	mov DWORD[counter], MOVE_DELAY
 	dec WORD[back]
-	jz backKernal
+	jz .backKernal
 
 	;切换颜色和重置形状
 	mov BYTE[ball], BALL_NORMAL
@@ -106,23 +111,24 @@ looper:
 
 		jmp .move
 	
-backKernal:
-	;清屏
-	; mov	ax, 600h	; AH = 6,  AL = 0
-	; mov	bx, 700h	; 黑底白字(BL = 7)
-	; mov	cx, 0		; 左上角: (0, 0)
-	; mov	dx, 184fh	; 右下角: (24, 79)
-	; int	10h			; 调用中断
-	; 待替换为回收进程
-	jmp $
+	.backKernal:
+		mov byte[back],1
+		; 清屏
+		mov	ax, 600h	; AH = 6,  AL = 0
+		mov	bx, 700h	; 黑底白字(BL = 7)
+		mov	cx, 0		; 左上角: (0, 0)
+		mov	dx, 184fh	; 右下角: (24, 79)
+		int	10h			; 调用中断
+		; 待替换为回收进程
+		jmp .outi
 
 [section .data]
 ;constant
 DISPLAYSEG  equ 0xB800  	;显存地址
-MOVE_DELAY  equ 100   		;字符移动耗时
-BOUND_X_MIN equ 0    		;边界X起始
+MOVE_DELAY  equ 200   		;字符移动耗时
+BOUND_X_MIN equ 40    		;边界X起始
 BOUND_Y_MIN equ 0     		;边界Y起始
-BOUND_X_MAX equ 40   	    ;边界X终止
+BOUND_X_MAX equ 80   	    ;边界X终止
 BOUND_Y_MAX equ 12   	    ;边界Y终止
 SCREEN_X    equ 80   	    ;屏幕宽度
 SCREEN_Y    equ 25     		;屏幕高度
