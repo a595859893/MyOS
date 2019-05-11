@@ -75,9 +75,8 @@ int NewThread(int cs,int ip){
 		pcb[temp].prev = temp;
 	}else{
 		next = pcb[readyHead].next;
-		prev = pcb[readyHead].prev;
 		pcb[next].prev = temp;
-		pcb[prev].next = temp;
+		pcb[readyHead].next = temp;
 		
 		pcb[temp].next = next;
 		pcb[temp].prev = readyHead;
