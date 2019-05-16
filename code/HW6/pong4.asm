@@ -5,8 +5,6 @@ ballstart:
 	;设置数据段
 	mov ax, cs
 	mov ds, ax
-	mov ss, ax
-	mov sp, 0xFFF0
 	
 	;中断覆盖
 	xor ax,ax
@@ -15,7 +13,16 @@ ballstart:
 	mov word[es:22h*4+2], cs
 	mov ax, cs
 	mov es, ax
-
+	
+	; 清屏
+	; mov	ax, 0600h			; AH = 6,  AL = 0
+	; mov	bx, 0700h			; 黑底白字(BL = 7)
+	; mov	cl, BOUND_X_MIN		
+	; mov ch, BOUND_Y_MIN		; 左上角
+	; mov	dl, BOUND_X_MAX		
+	; mov	dh, BOUND_Y_MAX		; 右下角
+	; int	10h					; 调用中断
+	
 	;个人信息
 	mov ah, 0x13      ;功能号
 	mov al, 1         ;光标至串尾
@@ -32,7 +39,19 @@ ballstart:
 	jne .check
 	
 	; 退出线程
-	jmp .check
+	; 清屏
+	; mov	ax, 0600h			; AH = 6,  AL = 0
+	; mov	bx, 0700h			; 黑底白字(BL = 7)
+	; mov	cl, BOUND_X_MIN		
+	; mov ch, BOUND_Y_MIN		; 左上角
+	; mov	dl, BOUND_X_MAX		
+	; mov	dh, BOUND_Y_MAX		; 右下角
+	; int	10h					; 调用中断
+	; 待替换为回收进程
+	mov ah, 6
+	int 21h
+	jmp $
+
 
 looper:
 	;速度计数器
@@ -113,13 +132,6 @@ looper:
 	
 	.backKernal:
 		mov byte[back],1
-		; 清屏
-		mov	ax, 600h	; AH = 6,  AL = 0
-		mov	bx, 700h	; 黑底白字(BL = 7)
-		mov	cx, 0		; 左上角: (0, 0)
-		mov	dx, 184fh	; 右下角: (24, 79)
-		int	10h			; 调用中断
-		; 待替换为回收进程
 		jmp .outi
 
 [section .data]

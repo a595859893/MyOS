@@ -99,7 +99,6 @@ WindFireWheelWithoutEnemy:
 	mov ds,bx
 	
 	dec byte[CoolWheelCounter]
-	mov bl, byte[CoolWheelCounter]
 	jnz .back
 	mov byte[CoolWheelCounter], COOLWHEEL_DELAY
 	
@@ -132,9 +131,12 @@ WindFireWheelWithoutEnemy:
 	iret
 	
 [SECTION .data]
+COOLWHEEL_DELAY equ 50
+
 CoolWheel dw "/-\|"
 CoolWheelCounter db COOLWHEEL_DELAY
 CoolWheelCharIndex dw 0
+
 ;弹幕
 BulletStr 	db 	"   Reading for the rise of China!   ",0x00
 BulletPosX 	db 	0xFF

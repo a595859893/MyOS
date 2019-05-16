@@ -1,35 +1,53 @@
 #pragma once
 #include "Utils.c"
 
+#define CMD_BUFFER_LEN 50
+#define CMD_COMMAND_NUM 3
+#define CMD_COMMAND_MAXLENGTH 10
+#define CMD_BATCH_NAMELENGTH 15
+#define CMD_HISTORY_LENGTH 20
+
+#define KEY_UP 0x48
+#define KEY_DOWN 0x50
+#define KEY_LEFT 0x4b
+#define KEY_RIGHT 0x4d
+
 extern int GetFileInfo(int fileIndex,char* name,int *sector,int *size,int *time,int *type);
 extern void RevalInt();
 extern void SetInt();
 extern void CallSysInt(int number);
 
+
 int CheckCommand(char *cmd,int end);
 void AutoCompelete(char *cmd);
+
+void FillCmdBuffer(const char *fillstr);
+void InsertCmdBuffer(const char ch);
+void ClearCmdBuffer(){;
+
+void LoadBatch();
 void ReadBatch(int batchBuffer);
 void FileInfo(char *fileName,int position,int size,int time,int type);
-void LoadBatch();
 void FileList();
 int MultiTest(char *cmd,int *start,int end);
-void Pong();
 
 
 int batchBuffer = 0x7F00;
 int fileInfoList = 0x7C00;
 int pagePos[4] = {0xC000,0xC200,0xC400,0xC600};
 
-#define CMD_BUFFER_LEN 50
-#define CMD_COMMAND_NUM 3
-#define CMD_COMMAND_MAXLENGTH 10
-#define CMD_BATCH_NAMELENGTH 15
 int screenCusor = 0;
 int cmdCurrent = 0;
 char cmdBuffer[CMD_BUFFER_LEN + 1] = "";
+
+char history[CMD_HISTORY_LENGTH][CMD_BUFFER_LEN + 1];
+int historyIndex = 0;
+int historyMax = 0;
+
 int batchSize[CMD_COMMAND_MAXLENGTH] = {};
 int batchPos[CMD_COMMAND_MAXLENGTH] = {};
 int orderLen = 9;
+
 char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"clear",
 	"filelist",
@@ -38,12 +56,10 @@ char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"int2",
 	"int3",
 	"int4",
-	"test"
 };
 
 void CommandOn(){
 	InitPcb();
-	SetInt();
 	//载入文件信息
 	Open(30,1,fileInfoList);
 	//载入可执行batch信息
@@ -58,13 +74,16 @@ void CommandOn(){
 }
 
 void CommandKeyPress(char key){
-	cmdBuffer[cmdCurrent] = key;
-	switch(cmdBuffer[cmdCurrent]){
+	switch(key){
 		case '\r':
 			cmdBuffer[cmdCurrent] = '\0';
+			StrCopy(cmdBuffer,history[historyMax])
+			historyMax++;
+			
 			Printf("\n");
 			CheckCommand(cmdBuffer,cmdCurrent);
 			cmdCurrent = 0;
+			
 			Printf(">>");
 			break;
 		case '\t':
@@ -77,8 +96,54 @@ void CommandKeyPress(char key){
 			}
 			break;
 		default:
-			if(cmdCurrent<CMD_BUFFER_LEN){
-				PutChar(cmdBuffer[cmdCurrent]);
+			if(cmdCurrent < CMD_BUFFER_LEN){
+				InsertCmdBuffer(key);
+				cmdCurrent++;
+			}
+			break;
+	}
+}
+
+void FillCmdBuffer(const char *fillstr){
+	
+}
+
+void InsertCmdBuffer(const char ch){
+	screenCusor
+	PutChar(cmdBuffer[cmdCurrent]);
+}
+
+void EraseCndBuffer(){
+	
+}
+
+void ClearCmdBuffer(){
+	
+}
+
+void CommandCortorlKeyPress(char key){
+	switch(key){
+		case KEY_UP:
+			if(historyIndex>0){
+				historyIndex++;
+				ClearCmdBuffer();
+				FillCmdBuffer(history[historyIndex]);
+			}
+			break;
+		case KEY_DOWN:
+			if(historyIndex>0){
+				historyIndex--;
+				ClearCmdBuffer();
+				FillCmdBuffer(history[historyIndex]);
+			}
+			break;
+		case KEY_LEFT:
+			if(cmdCurrent>0){
+				cmdCurrent--;
+			}
+			break;
+		case KEY_RIGHT:
+			if(cmdBuffer[cmdCurrent+1]!='\0'){
 				cmdCurrent++;
 			}
 			break;
@@ -178,7 +243,10 @@ int CheckCommand(char *cmd,int end){
 				FileList();
 				break;
 			case 2://pong
-				Pong();
+				if(MultiTest(cmd,&start,end) == -1){
+					Printf( "Wrong order!\n");
+					return -1;
+				}
 				break;
 			case 3:
 				CallSysInt(2);
@@ -191,12 +259,6 @@ int CheckCommand(char *cmd,int end){
 				break;
 			case 6:
 				CallSysInt(5);
-				break;
-			case 7:
-				if(MultiTest(cmd,&start,end) == -1){
-					Printf( "Wrong order!\n");
-					return -1;
-				}
 				break;
 			default:
 				Open(batchPos[cmdId]+1,batchSize[cmdId],batchBuffer);
@@ -313,6 +375,7 @@ int MultiTest(char *cmd,int *start,int end){
 		
 		if((*start + current)>=end || letter==' '){
 			if(hasThread){
+				DisableSwitch();
 				*start += current + 1;
 				for(int i=0;i<4;i++){
 					if(startIndex[i]){
@@ -320,18 +383,11 @@ int MultiTest(char *cmd,int *start,int end){
 						NewThread(pagePos[i]>>4,0x100);
 					}
 				}
+				EnableSwitch();
 				return 1;
 			}
 			return -1;
 		}
 		
 	}
-}
-
-void Pong(){
-	Clear();
-	RevalInt();
-	OpenAndJump(32,2,pagePos[0]);
-	SetInt();
-	Clear();
 }

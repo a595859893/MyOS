@@ -1,3 +1,5 @@
+extern DisposeThread
+
 global CallSysInt
 
 [SECTION .text]
@@ -12,6 +14,7 @@ global CallSysInt
 ;	3 展示个人信息
 ;	4 让风火轮变成电风扇
 ;	5 来一条弹幕
+;	6 退出当前进程
 
 SysInt:
 	push ds
@@ -29,6 +32,8 @@ SysInt:
 	je .BigFan
 	cmp ah, 5
 	je .Bullet
+	cmp ah, 6
+	je .Dispose
 	
 	jmp .ExitRet
 	
@@ -98,6 +103,14 @@ SysInt:
 	.Bullet:
 		mov byte[BulletPosX], SCREEN_WIDTH-40
 		jmp .ExitRet
+		
+	.Dispose:
+		mov ax,cs
+		mov ds,ax
+		add esp,6		;栈回退
+		push 0
+		call DisposeThread
+		jmp .ExitRet	;应该不会触发，但是保险起见……
 
 	.ExitRet:
 		sti

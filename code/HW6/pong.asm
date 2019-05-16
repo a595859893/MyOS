@@ -5,8 +5,6 @@ ballstart:
 	;设置数据段
 	mov ax, cs
 	mov ds, ax
-	mov ss, ax
-	mov sp, 0xFFF0
 	
 	;中断覆盖
 	xor ax,ax
@@ -15,7 +13,16 @@ ballstart:
 	mov word[es:22h*4+2], cs
 	mov ax, cs
 	mov es, ax
-
+	
+	; 清屏
+	; mov	ax, 0600h			; AH = 6,  AL = 0
+	; mov	bx, 0700h			; 黑底白字(BL = 7)
+	; mov	cl, BOUND_X_MIN		
+	; mov ch, BOUND_Y_MIN		; 左上角
+	; mov	dl, BOUND_X_MAX		
+	; mov	dh, BOUND_Y_MAX		; 右下角
+	; int	10h					; 调用中断
+	
 	;个人信息
 	mov ah, 0x13      ;功能号
 	mov al, 1         ;光标至串尾
@@ -27,7 +34,24 @@ ballstart:
 	mov cx, [mylen]   ;串长
 	int 0x10
 	
+	.check:
+	cmp byte[back],1
+	jne .check
+	
+	; 退出线程
+	; 清屏
+	mov	ax, 0600h			; AH = 6,  AL = 0
+	mov	bx, 0700h			; 黑底白字(BL = 7)
+	mov	cl, BOUND_X_MIN		
+	mov ch, BOUND_Y_MIN		; 左上角
+	mov	dl, BOUND_X_MAX		
+	mov	dh, BOUND_Y_MAX		; 右下角
+	int	10h					; 调用中断
+	; 待替换为回收进程
+	mov ah, 6
+	int 21h
 	jmp $
+
 
 looper:
 	;速度计数器
@@ -35,7 +59,7 @@ looper:
 	jnz .outi
 	mov DWORD[counter], MOVE_DELAY
 	dec WORD[back]
-	jz backKernal
+	jz .backKernal
 
 	;切换颜色和重置形状
 	mov BYTE[ball], BALL_NORMAL
@@ -106,15 +130,9 @@ looper:
 
 		jmp .move
 	
-backKernal:
-	;清屏
-	; mov	ax, 600h	; AH = 6,  AL = 0
-	; mov	bx, 700h	; 黑底白字(BL = 7)
-	; mov	cx, 0		; 左上角: (0, 0)
-	; mov	dx, 184fh	; 右下角: (24, 79)
-	; int	10h			; 调用中断
-	; 待替换为回收进程
-	jmp $
+	.backKernal:
+		mov byte[back],1
+		jmp .outi
 
 [section .data]
 ;constant
@@ -128,7 +146,7 @@ SCREEN_X    equ 80   	    ;屏幕宽度
 SCREEN_Y    equ 25     		;屏幕高度
 BALL_NORMAL equ 'o'    		;平常样式
 BALL_PONG   equ '*'     	;撞墙样式
-MAXCOUNT    equ 100     	;跳回次数
+MAXCOUNT    equ 5     	;跳回次数
 
 ;variable
 counter dd MOVE_DELAY
