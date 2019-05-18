@@ -7,7 +7,7 @@ nasm boost.asm -f bin -o ./bin/boost.bin
 
 nasm Kernal.asm -f elf32 -o ./bin/kernal.o
 gcc -fno-PIC -march=i386 -m16 -c -mpreferred-stack-boundary=2 -ffreestanding Comprehensive.c -o ./bin/comp.o
-ld -m i386pe -N -s ./bin/kernal.o ./bin/comp.o -Ttext 0x100 -Tdata 0x2500 -o ./bin/kernal.tmp
+ld -m i386pe -N -s ./bin/kernal.o ./bin/comp.o -Ttext 0x100 -Tdata 0x3000 -o ./bin/kernal.tmp
 
 nasm fileList.asm -f bin -o ./bin/fileList.bin
 nasm pong.asm -f bin -o ./bin/pong.bin
@@ -18,12 +18,12 @@ nasm pong4.asm -f bin -o ./bin/pong4.bin
 objcopy -O binary ./bin/kernal.tmp ./bin/kernal.bin
 dd if=/dev/zero of=./fnn.flp bs=1474560 count=1
 dd if=./bin/boost.bin of=./fnn.flp bs=512 count=1 conv=notrunc
-dd if=./bin/kernal.bin of=./fnn.flp bs=512 seek=1 count=29 conv=notrunc
-dd if=./bin/fileList.bin of=./fnn.flp bs=512 seek=30 count=1 conv=notrunc
-dd if=./batch.b of=./fnn.flp bs=512 seek=31 count=1 conv=notrunc
-dd if=./bin/pong.bin of=./fnn.flp bs=512 seek=32 count=2 conv=notrunc
-dd if=./bin/pong2.bin of=./fnn.flp bs=512 seek=34 count=2 conv=notrunc
-dd if=./bin/pong3.bin of=./fnn.flp bs=512 seek=36 count=2 conv=notrunc
-dd if=./bin/pong4.bin of=./fnn.flp bs=512 seek=38 count=2 conv=notrunc
+dd if=./bin/kernal.bin of=./fnn.flp bs=512 seek=1 count=72 conv=notrunc
+dd if=./bin/fileList.bin of=./fnn.flp bs=512 seek=73 count=1 conv=notrunc
+dd if=./batch.b of=./fnn.flp bs=512 seek=74 count=1 conv=notrunc
+dd if=./bin/pong.bin of=./fnn.flp bs=512 seek=75 count=2 conv=notrunc
+dd if=./bin/pong2.bin of=./fnn.flp bs=512 seek=77 count=2 conv=notrunc
+dd if=./bin/pong3.bin of=./fnn.flp bs=512 seek=79 count=2 conv=notrunc
+dd if=./bin/pong4.bin of=./fnn.flp bs=512 seek=81 count=2 conv=notrunc
 
 cp ./fnn.flp ../../fnn.flp

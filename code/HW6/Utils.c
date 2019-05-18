@@ -2,9 +2,6 @@
 
 extern void Clear();
 extern char GetChar();
-extern void BackChar();
-extern void PutChar(char ch);
-extern void Printf(char* msg);
 extern void Open(int offset,int count,int address);
 extern void OpenAndJump(int offset,int count,int address);	//返回是否到达结尾
 extern int Readline(int address,int offset,char *target);	//返回读取后的偏移量
@@ -20,14 +17,6 @@ int strEqual(char *a,char *b){
 	}
 	
 	return a[i]==b[i];
-}
-
-void strcpy(const char *src,const char *tgt){
-	while(*src!='\0'){
-		*tgt = *src;
-		src++;
-		tgt++;
-	}
 }
 
 int Int2Str(int org,char* target,int maxLength){
@@ -56,9 +45,9 @@ int Int2Str(int org,char* target,int maxLength){
 	return copy>0 ? copy : 1;
 }
 
-void StrCopy(char *src,char *tgt){
+void StrCopy(const char *src,char *tgt){
 	while(*tgt!='\0'){
-		*src = *tgt;
+		*tgt = *src;
 		src++;
 		tgt++;
 	}

@@ -16,14 +16,19 @@ extern int GetFileInfo(int fileIndex,char* name,int *sector,int *size,int *time,
 extern void RevalInt();
 extern void SetInt();
 extern void CallSysInt(int number);
-
+extern void PutChar(char ch);
+extern void UpdateCursor();
+extern void Printf(char* msg);
 
 int CheckCommand(char *cmd,int end);
-void AutoCompelete(char *cmd);
+void AutoCompelete();
 
-void FillCmdBuffer(const char *fillstr);
+void FillCmdBuffer(const char *fillstr,int offset);
 void InsertCmdBuffer(const char ch);
-void ClearCmdBuffer(){;
+void ClearCmdBuffer();
+void EraseCmdBuffer();
+void MoveForwardCur(int offset);
+void MoveBackCur(int offset,int delete);
 
 void LoadBatch();
 void ReadBatch(int batchBuffer);
@@ -34,19 +39,19 @@ int MultiTest(char *cmd,int *start,int end);
 
 int batchBuffer = 0x7F00;
 int fileInfoList = 0x7C00;
-int pagePos[4] = {0xC000,0xC200,0xC400,0xC600};
+int pagePos[4] = {0xD000,0xD200,0xD400,0xD600};
 
 int screenCusor = 0;
-int cmdCurrent = 0;
-char cmdBuffer[CMD_BUFFER_LEN + 1] = "";
 
-char history[CMD_HISTORY_LENGTH][CMD_BUFFER_LEN + 1];
-int historyIndex = 0;
-int historyMax = 0;
+char cmdBuffer[CMD_HISTORY_LENGTH][CMD_BUFFER_LEN + 1];
+int cmdCur = 0;
+int cmdMaxCur = 0;
+int cmdIndex = 0;
+int cmdMaxIndex = 0;
 
 int batchSize[CMD_COMMAND_MAXLENGTH] = {};
 int batchPos[CMD_COMMAND_MAXLENGTH] = {};
-int orderLen = 9;
+int orderLen = 7;
 
 char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 	"clear",
@@ -59,14 +64,17 @@ char orderList[CMD_BATCH_NAMELENGTH][CMD_COMMAND_MAXLENGTH] = {
 };
 
 void CommandOn(){
+	//初始化PCB块
 	InitPcb();
 	//载入文件信息
-	Open(30,1,fileInfoList);
+	Open(73,1,fileInfoList);
 	//载入可执行batch信息
 	LoadBatch();
 
-	cmdCurrent = 0;
 	Clear();
+	cmdCur = 0;
+	cmdMaxCur = 0;
+	cmdBuffer[0][0] = '\0';
 	Printf("Welcome to WengOS!\n");
 	Printf("Command Avalible: clear, pong, filelist, int33, int34, int35, int36\n");
 	Printf("You can type Tab to autocomplete command\n");
@@ -76,81 +84,160 @@ void CommandOn(){
 void CommandKeyPress(char key){
 	switch(key){
 		case '\r':
-			cmdBuffer[cmdCurrent] = '\0';
-			StrCopy(cmdBuffer,history[historyMax])
-			historyMax++;
+			cmdBuffer[cmdMaxIndex][cmdMaxCur+1] = '\0';
+		
+			if(cmdMaxIndex==cmdIndex) cmdIndex++;
+			cmdMaxIndex++;
 			
 			Printf("\n");
-			CheckCommand(cmdBuffer,cmdCurrent);
-			cmdCurrent = 0;
+		Printf(cmdBuffer[cmdMaxIndex-1]);	
+		Printf("\n");
+			CheckCommand(cmdBuffer[cmdMaxIndex-1],cmdMaxCur);
+			cmdCur = 0;
+			cmdMaxCur = 0;
 			
 			Printf(">>");
+			UpdateCursor();
+
 			break;
 		case '\t':
-			AutoCompelete(cmdBuffer);
+			AutoCompelete();
 			break;
 		case '\b':
-			if(cmdCurrent>0){
-				BackChar();
-				cmdCurrent--;
-			}
+			if(cmdCur>0)EraseCmdBuffer();
 			break;
 		default:
-			if(cmdCurrent < CMD_BUFFER_LEN){
-				InsertCmdBuffer(key);
-				cmdCurrent++;
-			}
+			if(cmdCur<CMD_BUFFER_LEN) InsertCmdBuffer(key);
 			break;
 	}
-}
-
-void FillCmdBuffer(const char *fillstr){
-	
-}
-
-void InsertCmdBuffer(const char ch){
-	screenCusor
-	PutChar(cmdBuffer[cmdCurrent]);
-}
-
-void EraseCndBuffer(){
-	
-}
-
-void ClearCmdBuffer(){
-	
 }
 
 void CommandCortorlKeyPress(char key){
 	switch(key){
 		case KEY_UP:
-			if(historyIndex>0){
-				historyIndex++;
+			if(cmdIndex>0){
+				cmdIndex--;
 				ClearCmdBuffer();
-				FillCmdBuffer(history[historyIndex]);
+				FillCmdBuffer(cmdBuffer[cmdIndex],0);
 			}
 			break;
 		case KEY_DOWN:
-			if(historyIndex>0){
-				historyIndex--;
+			if(cmdIndex<cmdMaxIndex){
+				cmdIndex++;
 				ClearCmdBuffer();
-				FillCmdBuffer(history[historyIndex]);
+				FillCmdBuffer(cmdBuffer[cmdIndex],0);
 			}
 			break;
 		case KEY_LEFT:
-			if(cmdCurrent>0){
-				cmdCurrent--;
-			}
+			MoveBackCur(1,0);
 			break;
 		case KEY_RIGHT:
-			if(cmdBuffer[cmdCurrent+1]!='\0'){
-				cmdCurrent++;
-			}
+			MoveForwardCur(1);
 			break;
 	}
 }
 
+void FillCmdBuffer(const char *fillstr,int offset){
+	while(fillstr[offset] != '\0'){
+		InsertCmdBuffer(fillstr[offset]);
+		offset++;
+	}
+}
+
+void InsertCmdBuffer(const char ch){
+	screenCusor += (cmdMaxCur-cmdCur+1)*2;
+	for(int i=cmdMaxCur;i>=cmdCur;i--){
+		cmdBuffer[cmdMaxIndex][i] = cmdBuffer[cmdMaxIndex][i-1];
+		screenCusor-=2;
+		PutChar(cmdBuffer[cmdMaxIndex][i]);
+	}
+	
+	cmdBuffer[cmdMaxIndex][cmdCur] = ch;
+	cmdMaxCur++;
+	cmdCur++;
+	PutChar(ch);
+	screenCusor+=2;
+	UpdateCursor();
+}
+
+void EraseCmdBuffer(){
+	if(cmdCur<=0)
+		return;
+	
+	screenCusor-=2;
+	int curBuf = screenCusor;
+	for(int i=cmdCur-1;i<cmdMaxCur;i++){
+		cmdBuffer[cmdMaxIndex][i] = cmdBuffer[cmdMaxIndex][i+1];
+		PutChar(cmdBuffer[cmdMaxIndex][i]);
+		screenCusor+=2;
+	}
+	PutChar(' ');
+	cmdMaxCur--;
+	cmdCur--;
+	
+	screenCusor = curBuf;
+	UpdateCursor();
+}
+
+void MoveForwardCur(int offset){
+	offset = offset >= cmdMaxCur-cmdCur ? cmdMaxCur-cmdCur: offset;
+	cmdCur += offset;
+	screenCusor += offset*2;
+	UpdateCursor();
+}
+
+void MoveBackCur(int offset,int delete){
+	offset = offset >= cmdCur ? cmdCur : offset;
+	if(delete){
+		for(int i = 0;i<offset;i++) EraseCmdBuffer();
+	}else{
+		screenCusor -= offset*2;
+		cmdCur -= offset;
+		UpdateCursor();
+	}
+}
+
+void ClearCmdBuffer(){
+	MoveBackCur(cmdMaxCur,1);
+}
+
 int orderIndex[CMD_COMMAND_MAXLENGTH];
+void AutoCompelete(){
+	int length=0,current=0,start=0;
+	
+	for(int i =0;i<cmdCur;i++){
+		if(cmdBuffer[cmdMaxIndex][current + i] == ' ')
+			start = i + 1;
+	}
+	
+	for(int i =0;i<orderLen;i++){
+		if(cmdBuffer[cmdMaxIndex][current + start] == orderList[i][current]){
+			orderIndex[length] = i;
+			length++;
+		}
+	}
+	
+	while(length){
+		current++;
+		if((current + start)>=cmdCur){
+			if(length>0)
+				FillCmdBuffer(orderList[orderIndex[0]]+current-1,current);
+			return;
+		}else{
+			for(int i =0;i<length;i++){
+				if(cmdBuffer[cmdMaxIndex][current + start] != orderList[orderIndex[i]][current]){
+					length--;
+					orderIndex[i] = orderIndex[length];
+					i--;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+
 int CommandMatch(char *cmd,int *start,int end){
 	int length=0,current=0;
 	
@@ -185,53 +272,12 @@ int CommandMatch(char *cmd,int *start,int end){
 	return -1;
 }
 
-void AutoCompelete(char *cmd){
-	int length=0,current=0,start=0;
-	
-	for(int i =0;i<cmdCurrent;i++){
-		if(cmd[current + i] == ' '){
-			start = i+1;
-		}
-	}
-	
-	for(int i =0;i<orderLen;i++){
-		if(cmd[current + start] == orderList[i][current]){
-			orderIndex[length] = i;		
-			length++;
-		}
-	}
-	
-	while(length){
-		current++;
-		if((current + start)>=cmdCurrent){
-			if(length>0){
-				while(orderList[orderIndex[0]][current] != '\0'){
-					cmd[current + start] = orderList[orderIndex[0]][current];
-					PutChar(cmdBuffer[cmdCurrent]);
-					cmdCurrent++;
-					current++;
-				}
-			}
-			return;
-		}else{
-			for(int i =0;i<length;i++){
-				if(cmd[current + start] != orderList[orderIndex[i]][current]){
-					length--;
-					orderIndex[i] = orderIndex[length];
-					i--;
-				}
-			}
-		}
-	}
-
-	return;
-}
-
 int CheckCommand(char *cmd,int end){
 	int start = 0,cmdId=-1;
 
 	while(start<end){
 		cmdId = CommandMatch(cmd,&start,end);
+
 		switch(cmdId){
 			case -1:
 				Printf( "Wrong order!\n");
@@ -296,9 +342,7 @@ void LoadBatch(){
 	while(1){
 		if(GetFileInfo(index,orderList[orderLen],&batchPos[orderLen],&batchSize[orderLen],&time,&type)){
 			index++;
-			if(type==3){
-				orderLen++;
-			}
+			if(type==3) orderLen++;
 		}else{
 			break;
 		}
@@ -332,24 +376,24 @@ void FileInfo(char *fileName,int position,int size,int time,int type){
 	Printf("  |");
 	len = 10-Int2Str(position,temp,10); 
 	Printf(temp);
-	while(len--)PutChar(' ');
+	while(len--)Printf(" ");
 		
-	PutChar('|');
+	Printf("|");
 	len = 6-Int2Str(size,temp,6); 
 	Printf(temp);
-	while(len--)PutChar(' ');
+	while(len--)Printf(" ");
 	
-	PutChar('|');
+	Printf("|");
 	len = 6-Int2Str(time,temp,6); 
 	Printf(temp);
-	while(len--)PutChar(' ');
+	while(len--)Printf(" ");
 	
-	PutChar('|');
+	Printf("|");
 	len = 6-Int2Str(type,temp,6); 
 	Printf(temp);
-	while(len--)PutChar(' ');
+	while(len--)Printf(" ");
 	
-	PutChar('|');
+	Printf("|");
 	Printf("\n-------------------------------------------\n");
 }
 
@@ -379,7 +423,7 @@ int MultiTest(char *cmd,int *start,int end){
 				*start += current + 1;
 				for(int i=0;i<4;i++){
 					if(startIndex[i]){
-						Open(32+i*2,2,pagePos[i]+0x100);
+						Open(75+i*2,2,pagePos[i]+0x100);
 						NewThread(pagePos[i]>>4,0x100);
 					}
 				}
